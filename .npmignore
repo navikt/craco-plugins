@@ -1,0 +1,11 @@
+node_modules/
+.idea/
+dist/
+example/
+src/
+test/
+
+.gitignore
+.travis.yml
+CODEOWNERS
+tsconfig.json
