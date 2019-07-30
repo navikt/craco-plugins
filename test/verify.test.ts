@@ -5,7 +5,7 @@ jest.mock('yargs', () => ({
 }));
 
 import { RemoveCssHashPlugin, RemoveJsHashPlugin, ConfigurableProxyTarget } from '../src';
-const BUILD_PATH = require('path').resolve(__dirname, './build').replace('\\test\\', '\\src\\');
+const BUILD_PATH = require('path').resolve(__dirname, './build').replace('test', 'src');
 
 describe('RemoveCssHashPlugin', () => {
     const baseWebpackConfig = (filename: string) => ({
