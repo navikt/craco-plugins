@@ -3,9 +3,9 @@ const argv = require('yargs').argv;
 const BUILD_PATH = path.resolve(__dirname, './build');
 
 export const RemoveCssHashPlugin = {
-    overrideWebpackConfig: ({webpackConfig, pluginOptions = {}}) => {
+    overrideWebpackConfig: ({webpackConfig, pluginOptions = {}}: any) => {
         const plugins = webpackConfig.plugins;
-        plugins.forEach(plugin => {
+        plugins.forEach((plugin: any) => {
 
             const options = plugin.options;
 
@@ -24,7 +24,7 @@ export const RemoveCssHashPlugin = {
 };
 
 export const RemoveJsHashPlugin = {
-    overrideCracoConfig: ({cracoConfig, pluginOptions = {}}) => {
+    overrideCracoConfig: ({cracoConfig, pluginOptions = {}}: any) => {
         cracoConfig.webpack = {
             configure:{
                 optimization: {
@@ -48,8 +48,8 @@ export const RemoveJsHashPlugin = {
 };
 
 export const ConfigurableProxyTarget = {
-    overrideCracoConfig: ({cracoConfig}) => {
-        cracoConfig.devServer = (devServerConfig) => {
+    overrideCracoConfig: ({cracoConfig}: any) => {
+        cracoConfig.devServer = (devServerConfig: any) => {
             const proxyOverrides = Array.isArray(argv.proxy) ? argv.proxy : [ argv.proxy ].filter((override) => override);
             for (let i = 0; i < Math.min(proxyOverrides.length, devServerConfig.proxy.length); i++) {
                 devServerConfig.proxy[i].target = proxyOverrides[i]
