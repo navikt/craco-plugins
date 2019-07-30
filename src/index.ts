@@ -2,7 +2,7 @@ const path = require('path');
 const argv = require('yargs').argv;
 const BUILD_PATH = path.resolve(__dirname, './build');
 
-export const RemoveCssHashPlugin = {
+export const ChangeCssFilename = {
     overrideWebpackConfig: ({webpackConfig, pluginOptions = {}}: any) => {
         const plugins = webpackConfig.plugins;
         plugins.forEach((plugin: any) => {
@@ -23,7 +23,7 @@ export const RemoveCssHashPlugin = {
     }
 };
 
-export const RemoveJsHashPlugin = {
+export const ChangeJsFilename = {
     overrideCracoConfig: ({cracoConfig, pluginOptions = {}}: any) => {
         cracoConfig.webpack = {
             configure:{

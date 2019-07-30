@@ -4,10 +4,10 @@ jest.mock('yargs', () => ({
     }
 }));
 
-import { RemoveCssHashPlugin, RemoveJsHashPlugin, ConfigurableProxyTarget } from '../src';
+import { ChangeCssFilename, ChangeJsFilename, ConfigurableProxyTarget } from '../src';
 const BUILD_PATH = require('path').resolve(__dirname, './build').replace('test', 'src');
 
-describe('RemoveCssHashPlugin', () => {
+describe('ChangeCssFilename', () => {
     const baseWebpackConfig = (filename: string) => ({
         plugins: [
             {
@@ -26,7 +26,7 @@ describe('RemoveCssHashPlugin', () => {
     });
 
     it('should mutate webpackconfig with default value', () => {
-        const webpackConfig = RemoveCssHashPlugin.overrideWebpackConfig({
+        const webpackConfig = ChangeCssFilename.overrideWebpackConfig({
             webpackConfig: baseWebpackConfig('main.css')
         });
 
@@ -34,7 +34,7 @@ describe('RemoveCssHashPlugin', () => {
     });
 
     it('should mutate webpackconfig with provided value', () => {
-        const webpackConfig = RemoveCssHashPlugin.overrideWebpackConfig({
+        const webpackConfig = ChangeCssFilename.overrideWebpackConfig({
             webpackConfig: baseWebpackConfig('main.css'),
             pluginOptions: { filename: 'my-custom.css' }
         });
@@ -43,7 +43,7 @@ describe('RemoveCssHashPlugin', () => {
     });
 });
 
-describe('RemoveJsHashPlugin', () => {
+describe('ChangeJsFilename', () => {
     const baseCracoConfig = (enableChunking: boolean, buildPath: string, filename: string) => ({
            webpack: {
                configure:  {
@@ -65,7 +65,7 @@ describe('RemoveJsHashPlugin', () => {
     });
 
     it('should disable chunking, set build-path and default filename', () => {
-        const cracoConfig = RemoveJsHashPlugin.overrideCracoConfig({
+        const cracoConfig = ChangeJsFilename.overrideCracoConfig({
           cracoConfig: baseCracoConfig(true, 'defualt-buildpath', 'default.js')
         });
 
@@ -73,7 +73,7 @@ describe('RemoveJsHashPlugin', () => {
     });
 
     it('should disable chunking, set build-path and filename from pluginsOptions', () => {
-        const cracoConfig = RemoveJsHashPlugin.overrideCracoConfig({
+        const cracoConfig = ChangeJsFilename.overrideCracoConfig({
             cracoConfig: baseCracoConfig(true, 'defualt-buildpath', 'default.js'),
             pluginOptions: {
                 filename: 'customfile.js',
