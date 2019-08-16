@@ -57,7 +57,6 @@ describe('ChangeJsFilename', () => {
                        runtimeChunk: enableChunking
                    },
                    output: {
-                       path: buildPath,
                        filename: filename
                    }
                }
