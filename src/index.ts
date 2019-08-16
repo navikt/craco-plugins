@@ -1,6 +1,4 @@
-const path = require('path');
 const argv = require('yargs').argv;
-const BUILD_PATH = path.resolve(__dirname, './build');
 
 export const ChangeCssFilename = {
     overrideWebpackConfig: ({webpackConfig, pluginOptions = {}}: any) => {
@@ -37,7 +35,6 @@ export const ChangeJsFilename = {
                     runtimeChunk: false
                 },
                 output: {
-                    path: pluginOptions.buildPath || BUILD_PATH,
                     filename: pluginOptions.filename || 'static/js/[name].js',
                 },
             }

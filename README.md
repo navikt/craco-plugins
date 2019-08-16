@@ -35,7 +35,6 @@ The `filename` is passed to webpack, so any "variable" (e.g `[name]`, `[hash]` e
 {
     plugin: ChangeJsFilename,
     options: {
-        buildPath: '', // optional, default buildPath: '__dirname/build'
         filename: 'my-filename.js' // optional, default filename: static/js/[name].js
     }
 }
