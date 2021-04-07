@@ -1,5 +1,35 @@
 const argv = require('yargs').argv;
 
+export enum ChunkingStrategy {
+    NO_CHUNKING= "NO_CHUNKING",
+    VENDOR_CHUNKING = "VENDOR_CHUNKING",
+    DEFAULT_CHUNKING = 'DEFAULT_CHUNKING'
+}
+interface ChunkingConfig {
+    cacheGroups?: { [key: string]: boolean | { test: RegExp; name: string; chunks: string; } };
+    chunks?: string;
+    name?: boolean;
+}
+const chunkingStrategyConfig: Record<ChunkingStrategy, ChunkingConfig> = {
+    [ChunkingStrategy.NO_CHUNKING]: {
+        cacheGroups: {
+            default: false,
+            vendors: false
+        }
+    },
+    [ChunkingStrategy.VENDOR_CHUNKING]: {
+        cacheGroups: {
+            default: false,
+            vendors: {
+                test: /[\\/]node_modules[\\/]/,
+                name: 'vendors',
+                chunks: 'all'
+            }
+        }
+    },
+    [ChunkingStrategy.DEFAULT_CHUNKING]: {}, // Do nothing, allows default configuration to be used
+}
+
 export const ChangeCssFilename = {
     overrideWebpackConfig: ({webpackConfig, pluginOptions = {}}: any) => {
         const plugins = webpackConfig.plugins;
@@ -24,12 +54,16 @@ export const ChangeCssFilename = {
 
 export const ChangeJsFilename = {
     overrideCracoConfig: ({cracoConfig, pluginOptions = {}}: any) => {
-        const optimization = (pluginOptions.allowChunks || false)
-            ? { splitChunks: { chunks: "all", name: false }, runtimeChunk: {} }
-            : { splitChunks: { cacheGroups: { default: false, vendors: false } }, runtimeChunk: false };
+        const allowRuntimeChunk = pluginOptions.runtimeChunk || false;
+        const chunkingStrategy: ChunkingStrategy = pluginOptions.splitChunks || ChunkingStrategy.NO_CHUNKING;
+        const chunkingConfig: ChunkingConfig = chunkingStrategyConfig[chunkingStrategy];
+        const optimization = {
+            splitChunks: chunkingConfig,
+            runtimeChunk: allowRuntimeChunk ? { name: 'runtime' } : false
+        };
 
         cracoConfig.webpack = {
-            configure:{
+            configure: {
                 optimization: optimization,
                 output: {
                     filename: pluginOptions.filename || 'static/js/[name].js',

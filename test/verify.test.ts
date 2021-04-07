@@ -4,123 +4,204 @@ jest.mock('yargs', () => ({
     }
 }));
 
-import { ChangeCssFilename, ChangeJsFilename, ConfigurableProxyTarget } from '../src';
-const BUILD_PATH = require('path').resolve(__dirname, './build').replace('test', 'src');
+import {ChangeCssFilename, ChangeJsFilename, ConfigurableProxyTarget} from '../src';
 
-describe('ChangeCssFilename', () => {
-    const baseWebpackConfig = (filename: string, chunkFilename: string) => ({
+interface CracoConfigOptions {
+    filename: string;
+    chunkFilename: string;
+    runtimeChunk: object | boolean;
+    splitChunks: object;
+}
+
+function defaultCracoConfig(
+    options?: Partial<CracoConfigOptions>
+) {
+    const mergedOptions = {
+        filename: "static/js/[name].[contenthash:8].js",
+        chunkFilename: "static/js/[name].[contenthash:8].chunk.js",
+        runtimeChunk: {},
+        splitChunks: {},
+        ...options
+    };
+    return {
+        webpack: {
+            configure: {
+                optimization: {
+                    splitChunks: mergedOptions.splitChunks,
+                    runtimeChunk: mergedOptions.runtimeChunk
+                },
+                output: {
+                    filename: mergedOptions.filename,
+                    chunkFilename: mergedOptions.chunkFilename
+                }
+            }
+        }
+    };
+}
+
+function defaultWebpackConfig(
+    filename: string = "static/css/[name].[contenthash:8].css",
+    chunkFilename: string = "static/css/[name].[contenthash:8].chunk.css"
+) {
+    return {
         plugins: [
             {
                 options: {
+                    type: "Plugin not related to CSS",
                     filename: 'not-a-css.js'
                 }
             },
             {
                 options: {
-                    filename: filename,
-                    chunkFilename: chunkFilename
+                    filename,
+                    chunkFilename
                 }
             },
             {options: {}},
             {}
         ]
-    });
+    };
+}
 
+describe('ChangeCssFilename', () => {
     it('should mutate webpackconfig with default value', () => {
         const webpackConfig = ChangeCssFilename.overrideWebpackConfig({
-            webpackConfig: baseWebpackConfig('main.css', 'chunk.css')
+            webpackConfig: defaultWebpackConfig()
         });
 
-        expect(webpackConfig).toEqual(baseWebpackConfig('static/css/[name].css', 'static/css/[name].chunk.css'));
+        expect(webpackConfig).toEqual(defaultWebpackConfig('static/css/[name].css', 'static/css/[name].chunk.css'));
     });
 
     it('should mutate webpackconfig with provided value', () => {
         const webpackConfig = ChangeCssFilename.overrideWebpackConfig({
-            webpackConfig: baseWebpackConfig('main.css', 'chunk.css'),
-            pluginOptions: { filename: 'my-custom.css', chunkFilename: 'my-chunk.css' }
+            webpackConfig: defaultWebpackConfig(),
+            pluginOptions: {filename: 'my-custom.css', chunkFilename: 'my-chunk.css'}
         });
 
-        expect(webpackConfig).toEqual(baseWebpackConfig('my-custom.css', 'my-chunk.css'));
+        expect(webpackConfig).toEqual(defaultWebpackConfig('my-custom.css', 'my-chunk.css'));
     });
 });
 
 describe('ChangeJsFilename', () => {
-    const baseCracoConfig = (enableChunking: boolean, buildPath: string, filename: string, chunkFilename: string) => ({
-           webpack: {
-               configure:  {
-                   optimization: {
-                       splitChunks: {
-                           cacheGroups: {
-                               default: enableChunking,
-                               vendors: enableChunking
-                           }
-                       },
-                       runtimeChunk: enableChunking
-                   },
-                   output: {
-                       filename: filename,
-                       chunkFilename: chunkFilename
-                   }
-               }
-           }
-    });
-
-    it('should disable chunking, set build-path and default filename', () => {
+    it('should use no-chunking as default', () => {
         const cracoConfig = ChangeJsFilename.overrideCracoConfig({
-          cracoConfig: baseCracoConfig(true, 'defualt-buildpath', 'default.js', 'chunk.js')
+            cracoConfig: defaultCracoConfig()
         });
 
-        expect(cracoConfig).toEqual(baseCracoConfig(false, BUILD_PATH, 'static/js/[name].js', 'static/js/[name].chunk.js'))
+        const expected = defaultCracoConfig({
+            filename: 'static/js/[name].js',
+            chunkFilename: 'static/js/[name].chunk.js',
+            runtimeChunk: false,
+            splitChunks: {
+                cacheGroups: {
+                    default: false,
+                    vendors: false
+                }
+            }
+        });
+        expect(cracoConfig).toEqual(expected);
     });
 
-    it('should disable chunking, set build-path and filename from pluginsOptions', () => {
+    it('should respect filename and chunkFilename options', () => {
         const cracoConfig = ChangeJsFilename.overrideCracoConfig({
-            cracoConfig: baseCracoConfig(true, 'defualt-buildpath', 'default.js', 'chunk.js'),
+            cracoConfig: defaultCracoConfig(),
+            pluginOptions: {
+                filename: 'customfile.js',
+                chunkFilename: 'chunk.js'
+            }
+        });
+        const expected = defaultCracoConfig({
+            filename: 'customfile.js',
+            chunkFilename: 'chunk.js',
+            runtimeChunk: false,
+            splitChunks: {
+                cacheGroups: {
+                    default: false,
+                    vendors: false
+                }
+            }
+        });
+        expect(cracoConfig).toEqual(expected);
+    });
+
+    it('should respect runtimeChunk option name', () => {
+        const cracoConfig = ChangeJsFilename.overrideCracoConfig({
+            cracoConfig: defaultCracoConfig(),
             pluginOptions: {
                 filename: 'customfile.js',
                 chunkFilename: 'chunk.js',
-                buildPath: 'mypath'
+                runtimeChunk: true
             }
         });
 
-        expect(cracoConfig).toEqual(baseCracoConfig(false, 'mypath', 'customfile.js', 'chunk.js'))
+        const expected = defaultCracoConfig({
+            filename: 'customfile.js',
+            chunkFilename: 'chunk.js',
+            runtimeChunk: { name: 'runtime' },
+            splitChunks: {
+                cacheGroups: {
+                    default: false,
+                    vendors: false
+                }
+            }
+        });
+        expect(cracoConfig).toEqual(expected);
     });
 
-    it('should allow chunking if option is present', () => {
+    it('should support simple vendor chunking', () => {
         const cracoConfig = ChangeJsFilename.overrideCracoConfig({
-            cracoConfig: baseCracoConfig(true, 'defualt-buildpath', 'default.js', 'chunk.js'),
+            cracoConfig: defaultCracoConfig(),
             pluginOptions: {
                 filename: 'customfile.js',
                 chunkFilename: 'chunk.js',
-                buildPath: 'mypath',
-                allowChunks: true
+                splitChunks: 'VENDOR_CHUNKING',
+                runtimeChunk: false
             }
         });
 
-        expect(cracoConfig).toEqual({
-            webpack: {
-                configure:  {
-                    optimization: {
-                        splitChunks: {
-                            chunks: "all",
-                            name: false
-                        },
-                        runtimeChunk: {}
-                    },
-                    output: {
-                        filename: 'customfile.js',
-                        chunkFilename: 'chunk.js'
+        const expected = defaultCracoConfig({
+            filename: 'customfile.js',
+            chunkFilename: 'chunk.js',
+            runtimeChunk: false,
+            splitChunks: {
+                cacheGroups: {
+                    default: false,
+                    vendors: {
+                        test: /[\\/]node_modules[\\/]/,
+                        name: 'vendors',
+                        chunks: 'all'
                     }
                 }
             }
-        })
+        });
+        expect(cracoConfig).toEqual(expected);
+    });
+
+    it('should support enabling full chunking', () => {
+        const cracoConfig = ChangeJsFilename.overrideCracoConfig({
+            cracoConfig: defaultCracoConfig(),
+            pluginOptions: {
+                filename: 'customfile.js',
+                chunkFilename: 'chunk.js',
+                splitChunks: 'DEFAULT_CHUNKING',
+                runtimeChunk: true
+            }
+        });
+
+        const expected = defaultCracoConfig({
+            filename: 'customfile.js',
+            chunkFilename: 'chunk.js',
+            runtimeChunk: { name: 'runtime' },
+            splitChunks: {}
+        });
+        expect(cracoConfig).toEqual(expected);
     });
 });
 
 describe('ConfigurableProxyTarget', () => {
     const defaultDevserverConfig = (value: any) => value;
     const baseDevserverConfig = (...targets: string[]) => ({
-        proxy: targets.map((target) => ({ target }))
+        proxy: targets.map((target) => ({target}))
     });
 
     it('should allow replacing dev-server-proxy with command-line attribute', () => {
