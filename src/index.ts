@@ -13,6 +13,7 @@ export const ChangeCssFilename = {
 
             if (options.filename && options.filename.endsWith('.css')) {
                 options.filename = pluginOptions.filename || "static/css/[name].css";
+                options.chunkFilename = pluginOptions.chunkFilename || "static/css/[name].chunk.css";
             }
 
         });
@@ -23,19 +24,16 @@ export const ChangeCssFilename = {
 
 export const ChangeJsFilename = {
     overrideCracoConfig: ({cracoConfig, pluginOptions = {}}: any) => {
+        const optimization = (pluginOptions.allowChunks || false)
+            ? { splitChunks: { chunks: "all", name: false }, runtimeChunk: {} }
+            : { splitChunks: { cacheGroups: { default: false, vendors: false } }, runtimeChunk: false };
+
         cracoConfig.webpack = {
             configure:{
-                optimization: {
-                    splitChunks: {
-                        cacheGroups: {
-                            default: false,
-                            vendors: false
-                        },
-                    },
-                    runtimeChunk: false
-                },
+                optimization: optimization,
                 output: {
                     filename: pluginOptions.filename || 'static/js/[name].js',
+                    chunkFilename: pluginOptions.chunkFilename || "static/js/[name].chunk.js",
                 },
             }
         };
